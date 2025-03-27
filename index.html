@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maharashtra Bus Tracker</title>
+    <meta name="description" content="Real-time tracking of state buses in Maharashtra">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0066cc">
+    <link rel="icon" href="assets/icon.svg">
+    <link rel="apple-touch-icon" href="assets/icon.svg">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Material Design Lite -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-blue.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-messaging-compat.js"></script>
+</head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+        <header class="mdl-layout__header">
+            <div class="mdl-layout__header-row">
+                <span class="mdl-layout-title">Maharashtra Bus Tracker</span>
+                <div class="mdl-layout-spacer"></div>
+                <div class="search-container">
+                    <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
+                        <label class="mdl-button mdl-js-button mdl-button--icon" for="search">
+                            <i class="material-icons">search</i>
+                        </label>
+                        <div class="mdl-textfield__expandable-holder">
+                            <input class="mdl-textfield__input" type="text" id="search" placeholder="Search routes, stops...">
+                            <label class="mdl-textfield__label" for="search">Search</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mdl-layout__tab-bar mdl-js-ripple-effect">
+                <a href="#home" class="mdl-layout__tab is-active">Map</a>
+                <a href="#stops" class="mdl-layout__tab">Bus Stops</a>
+                <a href="#favorites" class="mdl-layout__tab">Favorites</a>
+            </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <span class="mdl-layout-title">Maharashtra Bus Tracker</span>
+            <nav class="mdl-navigation">
+                <a class="mdl-navigation__link" href="#home">Home</a>
+                <a class="mdl-navigation__link" href="#stops">Bus Stops</a>
+                <a class="mdl-navigation__link" href="#favorites">Favorites</a>
+                <a class="mdl-navigation__link" href="#settings">Settings</a>
+                <a class="mdl-navigation__link" href="#about">About</a>
+            </nav>
+        </div>
+        <main class="mdl-layout__content">
+            <section class="mdl-layout__tab-panel is-active" id="home">
+                <div class="page-content">
+                    <!-- Map Container -->
+                    <div id="map"></div>
+                    
+                    <!-- Bus Info Panel (initially hidden) -->
+                    <div id="bus-info-panel" class="info-panel">
+                        <div class="panel-header">
+                            <h4 id="bus-number">Bus Details</h4>
+                            <button class="mdl-button mdl-js-button mdl-button--icon close-panel">
+                                <i class="material-icons">close</i>
+                            </button>
+                        </div>
+                        <div class="panel-content">
+                            <div class="bus-details">
+                                <p><strong>Route:</strong> <span id="bus-route">-</span></p>
+                                <p><strong>From:</strong> <span id="bus-from">-</span></p>
+                                <p><strong>To:</strong> <span id="bus-to">-</span></p>
+                                <p><strong>Next Stop:</strong> <span id="next-stop">-</span></p>
+                                <p><strong>ETA:</strong> <span id="bus-eta">-</span></p>
+                            </div>
+                            <button id="track-bus" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+                                Track This Bus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="mdl-layout__tab-panel" id="stops">
+                <div class="page-content">
+                    <div class="stops-container">
+                        <div class="mdl-grid" id="stops-list">
+                            <!-- Dynamically populated with bus stops -->
+                            <div class="mdl-spinner mdl-js-spinner is-active"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="mdl-layout__tab-panel" id="favorites">
+                <div class="page-content">
+                    <div class="favorites-container">
+                        <div class="mdl-grid" id="favorites-list">
+                            <!-- Dynamically populated with favorite buses/routes -->
+                            <div class="empty-state" id="empty-favorites">
+                                <i class="material-icons">star_border</i>
+                                <p>No favorites yet. Track buses to add them here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Snackbar for notifications -->
+        <div aria-live="assertive" aria-atomic="true" aria-relevant="text" class="mdl-snackbar mdl-js-snackbar">
+            <div class="mdl-snackbar__text"></div>
+            <button type="button" class="mdl-snackbar__action"></button>
+        </div>
+    </div>
+
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap" async defer></script>
+    
+    <!-- App Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/map-controller.js"></script>
+    <script src="js/bus-service.js"></script>
+    <script src="js/notification-service.js"></script>
+    <script src="js/app.js"></script>
+    <script src="components/search-bar.js"></script>
+    <script src="components/bus-list.js"></script>
+    <script src="components/stop-list.js"></script>
+    <script src="pages/home.js"></script>
+    <script src="pages/bus-details.js"></script>
+    <script src="pages/bus-stops.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/serviceWorker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

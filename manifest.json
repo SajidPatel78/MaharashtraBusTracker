@@ -1,0 +1,25 @@
+{
+  "name": "Maharashtra Bus Tracker",
+  "short_name": "BusTracker",
+  "description": "Real-time tracking of state buses in Maharashtra",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0066cc",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "orientation": "portrait",
+  "prefer_related_applications": false
+}
