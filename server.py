@@ -38,6 +38,9 @@ class EnvTemplateHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     handler = EnvTemplateHandler
     
+    # Allow reuse of the port
+    socketserver.TCPServer.allow_reuse_address = True
+    
     with socketserver.TCPServer(("", PORT), handler) as httpd:
         print(f"Serving at port {PORT}")
         httpd.serve_forever()
