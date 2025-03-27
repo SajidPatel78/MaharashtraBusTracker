@@ -151,6 +151,26 @@ body {
     opacity: 0.5;
 }
 
+/* Favorite Stops */
+.favorite-stop {
+    border-left: 4px solid #ffc107;
+}
+
+.favorite-stop .mdl-card__title {
+    background-color: rgba(255, 193, 7, 0.1);
+    justify-content: space-between;
+}
+
+.favorite-toggle {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+}
+
+.favorite-toggle .material-icons {
+    color: #ffc107;
+}
+
 /* Bus Markers */
 .bus-marker {
     background-color: #0066cc;

@@ -6,6 +6,7 @@ class BusStopsPage {
     this.stops = [];
     this.filteredStops = [];
     this.searchQuery = '';
+    this.favoriteStops = JSON.parse(localStorage.getItem('favoriteStops') || '[]');
   }
 
   // Initialize the bus stops page
@@ -126,12 +127,18 @@ class BusStopsPage {
       // Get buses approaching this stop
       const approachingBuses = this.getApproachingBuses(stop);
       
+      // Check if this stop is a favorite
+      const isFavorite = this.isStopFavorite(stop.id);
+      
       const stopCard = document.createElement('div');
       stopCard.className = 'mdl-cell mdl-cell--4-col mdl-cell--8-col-tablet mdl-cell--12-col-phone';
       stopCard.innerHTML = `
-        <div class="mdl-card mdl-shadow--2dp stop-card" style="width: 100%;">
+        <div class="mdl-card mdl-shadow--2dp stop-card${isFavorite ? ' favorite-stop' : ''}" style="width: 100%;">
           <div class="mdl-card__title">
             <h2 class="mdl-card__title-text">${stop.name}</h2>
+            <button class="mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect favorite-toggle" data-stop-id="${stop.id}">
+              <i class="material-icons">${isFavorite ? 'star' : 'star_border'}</i>
+            </button>
           </div>
           <div class="mdl-card__supporting-text">
             ${stop.address ? `<p>${stop.address}</p>` : ''}
@@ -193,6 +200,16 @@ class BusStopsPage {
           infoWindow.open(window.mapController.map, window.mapController.stopInfoMarker);
         }
       });
+      
+      // Add event listener for favorite toggle button
+      const favoriteBtn = stopCard.querySelector('.favorite-toggle');
+      if (favoriteBtn) {
+        favoriteBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.toggleFavoriteStop(stop);
+        });
+      }
       
       stopsList.appendChild(stopCard);
     });
@@ -277,6 +294,38 @@ class BusStopsPage {
   // Refresh the stops data
   refresh() {
     this.loadBusStops();
+  }
+  
+  // Check if a stop is in favorites
+  isStopFavorite(stopId) {
+    return this.favoriteStops.includes(stopId);
+  }
+  
+  // Toggle favorite status for a stop
+  toggleFavoriteStop(stop) {
+    const stopId = stop.id;
+    const index = this.favoriteStops.indexOf(stopId);
+    
+    if (index === -1) {
+      // Add to favorites
+      this.favoriteStops.push(stopId);
+      showSnackbar(`Added ${stop.name} to favorites`);
+    } else {
+      // Remove from favorites
+      this.favoriteStops.splice(index, 1);
+      showSnackbar(`Removed ${stop.name} from favorites`);
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('favoriteStops', JSON.stringify(this.favoriteStops));
+    
+    // Update UI
+    this.displayStops();
+    
+    // Update favorites list if it's visible and app is available
+    if (window.app && document.getElementById('favorites-list')) {
+      window.app.updateFavoritesList();
+    }
   }
 }
 

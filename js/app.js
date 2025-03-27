@@ -462,12 +462,13 @@ class App {
     if (!favoritesList) return;
     
     const trackedBuses = JSON.parse(localStorage.getItem('trackedBuses') || '[]');
+    const favoriteStops = JSON.parse(localStorage.getItem('favoriteStops') || '[]');
     
-    if (!trackedBuses.length) {
+    if (!trackedBuses.length && !favoriteStops.length) {
       favoritesList.innerHTML = `
         <div class="empty-state" id="empty-favorites">
           <i class="material-icons">star_border</i>
-          <p>No favorites yet. Track buses to add them here.</p>
+          <p>No favorites yet. Track buses or favorite stops to add them here.</p>
         </div>
       `;
       return;
@@ -475,6 +476,15 @@ class App {
     
     // Clear favorites list
     favoritesList.innerHTML = '';
+    
+    // Add section headers if both types of favorites exist
+    if (trackedBuses.length && favoriteStops.length) {
+      favoritesList.innerHTML += `
+        <div class="mdl-cell mdl-cell--12-col">
+          <h4>Favorite Buses</h4>
+        </div>
+      `;
+    }
     
     // Get tracked buses data
     if (window.busService) {
@@ -530,10 +540,113 @@ class App {
         favoritesList.appendChild(busCard);
       });
       
+      // Add favorite stops section header if both types exist
+      if (trackedBuses.length && favoriteStops.length) {
+        const stopsHeader = document.createElement('div');
+        stopsHeader.className = 'mdl-cell mdl-cell--12-col';
+        stopsHeader.innerHTML = '<h4>Favorite Stops</h4>';
+        favoritesList.appendChild(stopsHeader);
+      }
+      
+      // Add favorite stops
+      favoriteStops.forEach(stopId => {
+        const stop = window.busService.getStopById(stopId);
+        
+        // Skip if stop data not available
+        if (!stop) return;
+        
+        // Get approaching buses for this stop
+        const approachingBuses = [];
+        if (window.busStopsPage) {
+          approachingBuses.push(...window.busStopsPage.getApproachingBuses(stop));
+        } 
+        
+        const stopCard = document.createElement('div');
+        stopCard.className = 'mdl-cell mdl-cell--4-col mdl-cell--8-col-tablet mdl-cell--12-col-phone';
+        stopCard.innerHTML = `
+          <div class="mdl-card mdl-shadow--2dp favorite-stop" style="width: 100%;">
+            <div class="mdl-card__title">
+              <h2 class="mdl-card__title-text">${stop.name}</h2>
+            </div>
+            <div class="mdl-card__supporting-text">
+              ${stop.address ? `<p>${stop.address}</p>` : ''}
+              <div class="stop-card__upcoming">
+                <h4>Upcoming Buses:</h4>
+                ${window.busStopsPage ? window.busStopsPage.renderUpcomingBuses(approachingBuses) : '<p>No data available</p>'}
+              </div>
+            </div>
+            <div class="mdl-card__actions mdl-card--border">
+              <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect view-on-map" data-stop-id="${stop.id}">
+                View on Map
+              </a>
+              <button class="mdl-button mdl-button--icon mdl-button--colored remove-stop-favorite" data-stop-id="${stop.id}">
+                <i class="material-icons">star</i>
+              </button>
+            </div>
+          </div>
+        `;
+        
+        // Add event listener for view on map
+        stopCard.querySelector('.view-on-map').addEventListener('click', () => {
+          this.navigateTo('home');
+          
+          if (window.mapController && window.mapController.map) {
+            const position = { lat: parseFloat(stop.lat), lng: parseFloat(stop.lng) };
+            window.mapController.map.panTo(position);
+            window.mapController.map.setZoom(17);
+            
+            // Create or update a marker for this stop
+            if (window.mapController.stopInfoMarker) {
+              window.mapController.stopInfoMarker.setPosition(position);
+            } else {
+              window.mapController.stopInfoMarker = new google.maps.Marker({
+                position: position,
+                map: window.mapController.map,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: '#4CAF50',
+                  fillOpacity: 1,
+                  strokeColor: '#FFFFFF',
+                  strokeWeight: 2
+                },
+                title: stop.name
+              });
+            }
+            
+            // Show info window with stop details
+            const infoWindow = new google.maps.InfoWindow({
+              content: `
+                <div>
+                  <h4>${stop.name}</h4>
+                  <p>${stop.address || ''}</p>
+                  <p><strong>Upcoming buses:</strong></p>
+                  ${window.busStopsPage ? window.busStopsPage.renderUpcomingBusesForInfoWindow(approachingBuses) : '<p>No data available</p>'}
+                </div>
+              `
+            });
+            
+            infoWindow.open(window.mapController.map, window.mapController.stopInfoMarker);
+          }
+        });
+        
+        // Add event listener for removing from favorites
+        stopCard.querySelector('.remove-stop-favorite').addEventListener('click', () => {
+          if (window.busStopsPage) {
+            window.busStopsPage.toggleFavoriteStop(stop);
+          }
+          
+          // Update favorites list
+          this.updateFavoritesList();
+        });
+        
+        favoritesList.appendChild(stopCard);
+      });
+      
       // Initialize Material Design components
       componentHandler.upgradeElements(favoritesList);
     } else {
-      favoritesList.innerHTML = '<div class="error-message">Could not load favorite buses. Please try again later.</div>';
+      favoritesList.innerHTML = '<div class="error-message">Could not load favorites. Please try again later.</div>';
     }
   }
 
