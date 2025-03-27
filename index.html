@@ -128,12 +128,76 @@
 
     <!-- Google Maps API -->
     <script>
-        // Add Google Maps API key from environment variable
-        const googleMapsScript = document.createElement('script');
-        googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&callback=initMap`;
-        googleMapsScript.async = true;
-        googleMapsScript.defer = true;
-        document.head.appendChild(googleMapsScript);
+        // Wait for the environment variables to be loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if the map element exists
+            const mapElement = document.getElementById('map');
+            if (!mapElement) return;
+            
+            // Show loading message
+            mapElement.innerHTML = '<div class="map-loading">Loading map...</div>';
+            
+            // Check if Google Maps API key is available
+            if (!window.GOOGLE_MAPS_API_KEY) {
+                console.error("Google Maps API key is missing");
+                mapElement.innerHTML = `
+                    <div class="map-error">
+                        <i class="material-icons">error_outline</i>
+                        <p>Google Maps API key is missing. Please provide a valid API key.</p>
+                    </div>
+                `;
+                // Add styles for error message
+                const style = document.createElement('style');
+                style.textContent = `
+                    .map-error {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100%;
+                        color: #d32f2f;
+                        text-align: center;
+                        padding: 20px;
+                        background-color: #f5f5f5;
+                    }
+                    .map-error i {
+                        font-size: 48px;
+                        margin-bottom: 10px;
+                    }
+                    .map-error p {
+                        font-size: 16px;
+                        max-width: 80%;
+                    }
+                    .map-loading {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100%;
+                        background-color: #f5f5f5;
+                    }
+                `;
+                document.head.appendChild(style);
+                return;
+            }
+            
+            // Add Google Maps API key from environment variable
+            const googleMapsScript = document.createElement('script');
+            googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&callback=initMap`;
+            googleMapsScript.async = true;
+            googleMapsScript.defer = true;
+            googleMapsScript.onerror = function() {
+                console.error("Failed to load Google Maps API");
+                mapElement.innerHTML = `
+                    <div class="map-error">
+                        <i class="material-icons">error_outline</i>
+                        <p>Failed to load Google Maps. Please check your API key and internet connection.</p>
+                    </div>
+                `;
+            };
+            document.head.appendChild(googleMapsScript);
+            
+            console.log("Google Maps API script added to head");
+        });
     </script>
     
     <!-- App Scripts -->

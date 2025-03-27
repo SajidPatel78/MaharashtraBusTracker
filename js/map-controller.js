@@ -15,57 +15,106 @@ class MapController {
 
   // Initialize the Google Maps
   initMap() {
-    // Create a map instance
-    this.map = new google.maps.Map(document.getElementById('map'), {
-      center: this.defaultLocation,
-      zoom: 12,
-      mapTypeControl: false,
-      fullscreenControl: false,
-      streetViewControl: false,
-      zoomControlOptions: {
-        position: google.maps.ControlPosition.RIGHT_BOTTOM
+    try {
+      // Check if Google Maps API is loaded
+      if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        this.showMapError("Google Maps API failed to load. Please check your API key.");
+        return null;
       }
-    });
-
-    // Create info window for markers
-    this.infoWindow = new google.maps.InfoWindow();
-    
-    // Try to get user's current location
-    this.getUserLocation()
-      .then(position => {
-        this.userLocation = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        
-        // Add user location marker
-        this.addUserLocationMarker();
-        
-        if (!this.centerUpdated) {
-          this.map.setCenter(this.userLocation);
-          this.centerUpdated = true;
-        }
-      })
-      .catch(error => {
-        console.warn('Error getting user location:', error);
-      });
-    
-    // Add map controls
-    this.addMapControls();
-    
-    // Add map event listeners
-    this.map.addListener('click', () => {
-      // Close any open info windows
-      this.infoWindow.close();
       
-      // Hide bus info panel if it's open
-      const busInfoPanel = document.getElementById('bus-info-panel');
-      if (busInfoPanel.classList.contains('active')) {
-        busInfoPanel.classList.remove('active');
-      }
-    });
-    
-    return this.map;
+      // Create a map instance
+      this.map = new google.maps.Map(document.getElementById('map'), {
+        center: this.defaultLocation,
+        zoom: 12,
+        mapTypeControl: false,
+        fullscreenControl: false,
+        streetViewControl: false,
+        zoomControlOptions: {
+          position: google.maps.ControlPosition.RIGHT_BOTTOM
+        }
+      });
+
+      // Create info window for markers
+      this.infoWindow = new google.maps.InfoWindow();
+      
+      // Try to get user's current location
+      this.getUserLocation()
+        .then(position => {
+          this.userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          
+          // Add user location marker
+          this.addUserLocationMarker();
+          
+          if (!this.centerUpdated) {
+            this.map.setCenter(this.userLocation);
+            this.centerUpdated = true;
+          }
+        })
+        .catch(error => {
+          console.warn('Error getting user location:', error);
+        });
+      
+      // Add map controls
+      this.addMapControls();
+      
+      // Add map event listeners
+      this.map.addListener('click', () => {
+        // Close any open info windows
+        this.infoWindow.close();
+        
+        // Hide bus info panel if it's open
+        const busInfoPanel = document.getElementById('bus-info-panel');
+        if (busInfoPanel.classList.contains('active')) {
+          busInfoPanel.classList.remove('active');
+        }
+      });
+      
+      return this.map;
+    } catch (error) {
+      console.error("Error initializing Google Maps:", error);
+      this.showMapError("Failed to initialize Google Maps. Please check console for details.");
+      return null;
+    }
+  }
+  
+  // Show error message on the map container
+  showMapError(message) {
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) {
+      mapContainer.innerHTML = `
+        <div class="map-error">
+          <i class="material-icons">error_outline</i>
+          <p>${message}</p>
+        </div>
+      `;
+      // Add inline style for the error
+      const style = document.createElement('style');
+      style.textContent = `
+        .map-error {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          color: #d32f2f;
+          text-align: center;
+          padding: 20px;
+          background-color: #f5f5f5;
+        }
+        .map-error i {
+          font-size: 48px;
+          margin-bottom: 10px;
+        }
+        .map-error p {
+          font-size: 16px;
+          max-width: 80%;
+        }
+      `;
+      document.head.appendChild(style);
+    }
   }
   
   // Get user's current location
