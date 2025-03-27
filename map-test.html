@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Maps API Test</title>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            padding: 20px;
+            background-color: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+    <h1>Google Maps API Key Test</h1>
+    <div id="map"></div>
+    <div id="api-key-display"></div>
+    
+    <script>
+        // Get API key from the server
+        fetch('/env-config.js')
+            .then(response => response.text())
+            .then(data => {
+                // Extract the API key (simple regex)
+                const match = data.match(/window\.GOOGLE_MAPS_API_KEY = "([^"]+)"/);
+                if (match && match[1]) {
+                    const apiKey = match[1];
+                    document.getElementById('api-key-display').innerHTML = 
+                        `<p>Using API key: ${apiKey.substring(0, 10)}...</p>`;
+                    
+                    // Load Google Maps with the extracted API key
+                    const script = document.createElement('script');
+                    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+                    script.async = true;
+                    script.defer = true;
+                    script.onerror = function() {
+                        document.getElementById('map').innerHTML = 
+                            `<div class="error">Error loading Google Maps API with the provided key. 
+                            The key may be invalid or have domain restrictions.</div>`;
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    document.getElementById('map').innerHTML = 
+                        `<div class="error">Could not find Google Maps API key in configuration.</div>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('map').innerHTML = 
+                    `<div class="error">Error fetching configuration: ${error.message}</div>`;
+            });
+
+        // Initialize map when API loads
+        function initMap() {
+            try {
+                const map = new google.maps.Map(document.getElementById('map'), {
+                    center: { lat: 19.0760, lng: 72.8777 }, // Mumbai
+                    zoom: 12
+                });
+                
+                // Add a marker
+                new google.maps.Marker({
+                    position: { lat: 19.0760, lng: 72.8777 },
+                    map: map,
+                    title: 'Mumbai'
+                });
+                
+                document.getElementById('api-key-display').innerHTML += 
+                    '<p style="color: green">✓ Google Maps API loaded successfully!</p>';
+            } catch (error) {
+                document.getElementById('map').innerHTML = 
+                    `<div class="error">Error initializing map: ${error.message}</div>`;
+            }
+        }
+        
+        window.initMap = initMap;
+    </script>
+</body>
+</html>
